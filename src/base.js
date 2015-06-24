@@ -41,13 +41,20 @@ function isType(v, t) {
 }
 
 function extend(a, b) {
+    var reg = /function ([\w]+)/;
+    var res = null;
+    if (res = reg.exec(a.constructor.toString())){
+        a.__type = res[1];
+    }
+    else{
+        throw new Error("Error on get function name");
+    }
     a.__proto__ = new b();
-    a.type = arguments.callee.caller.name;
 }
 
 function instanceOf(el, s) {
-    if (el.type) {
-        if (el.type == s)
+    if (el.__type) {
+        if (el.__type == s)
             return true;
         return instanceOf(el.__proto__, s);
     }
@@ -57,7 +64,7 @@ function instanceOf(el, s) {
 function hasProperty(obj, n) {
     if (!isObject(obj))
         throw new TypeError("Parameter 1 must be Object");
-    if (!isString(obj))
+    if (!isString(n))
         throw new TypeError("Parameter 2 must be String");
     return (n in obj);
 }
@@ -81,7 +88,7 @@ function createNode(html) {
 
 function BaseObject() {
     var that = this;
-    this.type = "BaseObject"
+    this.__type = "BaseObject"
 
     var _data = {};
     this.defineProperty = function (n, value, readOnly) {
@@ -101,6 +108,18 @@ function BaseObject() {
             }
             return _data[n]
         }
+    }
+
+    this.hasProperty = function (n) {
+        return hasProperty(this, n);
+    }
+
+    this.clearProperty = function (n) {
+        if (this.hasProperty(n)) {
+            _data[n] = null;
+            return true;
+        }
+        return false;
     }
 
     var _events = {};
@@ -192,8 +211,8 @@ function Collection() {
         }
     }
     function compareBase(el, val) {
-        if (el.type) {
-            if (el.type == val.type)
+        if (el.__type) {
+            if (el.__type == val.__type)
                 return el == val;
             return compareBase(el.__proto__, val);
         }
@@ -222,6 +241,7 @@ function Element() {
 
     this.defineProperty("node");
     this.defineProperty("class");
+    this.defineProperty("visible");
     this.on("beforeChange", function (e) {
         switch (e.name) {
             case "class":
@@ -233,15 +253,26 @@ function Element() {
         }
     })
 
+    this.on("change", function (e) {
+        switch (e.name) {
+            case "node":
+                e.value.addEventListener("click", function () {
+                    that.trigger("click", arguments);
+                })
+                break;
+            case "visible":
+                if (e.value)
+                    that.node().style.display = "";
+                else
+                    that.node().style.display = "none";
+                break;
+        }
+    })
+
     this.create = function (s) {
         s = s || "div";
         var html = "<" + s + "/>";
         this.node(createNode(html));
-
-        var that = this;
-        this.node().addEventListener("click", function () {
-            that.trigger("click", arguments);
-        })
     }
 
     this.instanceOf = function (s) {
@@ -260,11 +291,11 @@ function Element() {
 
     this.appendTo = function (node) {
         if (instanceOf(node, "Element"))
-            node.appendChild(this.node());
+            node.node().appendChild(this.node());
         else {
             var _node = node;
             if (isString(node))
-                _node = this.query(node);
+                _node = query(node);
             _node.appendChild(this.node());
         }
     }
@@ -293,26 +324,20 @@ function Element() {
         }
     }
 
-    this.hasProperty = function (n) {
-        return hasProperty(this, n);
-    }
-
     this.text = function (s) {
         if (!isEmpty(s)) {
-            if (!isString(s)) {
+            if (!isString(s))
                 throw new TypeError("Value must be String");
-                this.node().textContent = s;
-            }
+            this.node().textContent = s;
         }
         return this.node().textContent;
     }
 
     this.html = function (s) {
         if (!isEmpty(s)) {
-            if (!isString(s)) {
+            if (!isString(s))
                 throw new TypeError("Value must be String");
-                this.node().innerHTML = s;
-            }
+            this.node().innerHTML = s;
         }
         return this.node().innerHTML;
     }
@@ -326,6 +351,9 @@ function Element() {
     }
 
     this.append = function (node) {
+        if (instanceOf(node, "Element")) {
+            node = node.node();
+        }
         this.node().appendChild(node);
     }
 
