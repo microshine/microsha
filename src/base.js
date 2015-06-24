@@ -35,20 +35,44 @@ function isEmpty(v) {
 }
 
 function isType(v, t) {
-    if (isString(t))
-        return typeof v == t
-    return v instanceof t
+    if (isFunction(t)) {
+        var n = functionName(t);
+        switch (n) {
+            case "String":
+                t = "string";
+                break;
+            case "Number":
+                t = "number";
+                break;
+            case "Boolean":
+                t = "boolean";
+                break;
+        }
+    }
+    if (isString(t)) {
+        return typeof v == t;
+    } else {
+        if (instanceOf(v, functionName(t))) {
+            return true;
+        }
+        return v instanceof t;
+    }
+}
+
+function functionName(fn) {
+    if (!isFunction(fn))
+        throw TypeError("Parameter 1 must be Function");
+    var reg = /function ([\w]+)/;
+    var res = null;
+    if (res = reg.exec(fn.toString()))
+        res = res[1];
+    else
+        throw new Error("Error on get function name");
+    return res;
 }
 
 function extend(a, b) {
-    var reg = /function ([\w]+)/;
-    var res = null;
-    if (res = reg.exec(a.constructor.toString())){
-        a.__type = res[1];
-    }
-    else{
-        throw new Error("Error on get function name");
-    }
+    a.__type = isObject(a) ? functionName(a.constructor) : functionName(a);
     a.__proto__ = new b();
 }
 
@@ -108,11 +132,14 @@ function BaseObject() {
             }
             return _data[n]
         };
-        for (var i in BaseObject.__attributes) {
+        var attrs = this[n].attributes = {};
+        attrs.isProperty = true;
+        for (var i in options)
+            attrs[i] = options[i];
+        for (var i in options) {
             var attr = BaseObject.__attributes[i];
-            if (options) {
+            if (attr)
                 attr.trigger("apply", [{ target: this, value: options }]);
-            }
         }
     }
 
@@ -126,6 +153,22 @@ function BaseObject() {
             return true;
         }
         return false;
+    }
+
+    this.toJSON = function () {
+        var obj = {};
+        for (var i in this) {
+            var attrs = this[i].attributes;
+            if (attrs && attrs.isProperty && hasProperty(attrs,"json")) {
+                var name = attrs.json.name || i;
+                var val = this[i]();
+                if (isObject(val))
+                    obj[name] = (hasProperty(val, "toJSON")) ? val.toJSON() : val;
+                else
+                    obj[name] = val;
+            }
+        }
+        return obj;
     }
 
     var _events = {};
@@ -176,7 +219,7 @@ BaseObject.defineAttribute = function (name, fn) {
         throw new TypeError("Parameter 1 msut be String");
     if (hasProperty(attrs, name))
         throw new Error("Attribute '" + name + "' already exists");
-    attrs[name] = new Attribute({name: name, fn: fn});
+    attrs[name] = new Attribute({name: name, callback: fn});
 }
 
 function Attribute() {
