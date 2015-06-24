@@ -91,7 +91,7 @@ function BaseObject() {
     this.__type = "BaseObject"
 
     var _data = {};
-    this.defineProperty = function (n, value, readOnly) {
+    this.defineProperty = function (n, value, readOnly, options) {
         _data[n] = value;
         this[n] = function (v) {
             if (!isEmpty(v) && !readOnly) {
@@ -107,6 +107,12 @@ function BaseObject() {
                 }
             }
             return _data[n]
+        };
+        for (var i in BaseObject.__attributes) {
+            var attr = BaseObject.__attributes[i];
+            if (options) {
+                attr.trigger("apply", [{ target: this, value: options }]);
+            }
         }
     }
 
@@ -160,6 +166,47 @@ function BaseObject() {
             }
         }
     }
+}
+
+BaseObject.__attributes = {};
+
+BaseObject.defineAttribute = function (name, fn) {
+    var attrs = BaseObject.__attributes;
+    if (!isString(name))
+        throw new TypeError("Parameter 1 msut be String");
+    if (hasProperty(attrs, name))
+        throw new Error("Attribute '" + name + "' already exists");
+    attrs[name] = new Attribute({name: name, fn: fn});
+}
+
+function Attribute() {
+    extend(this, BaseObject);
+    var that = this;
+
+    this.defineProperty("name");
+    this.defineProperty("callback");
+
+    this.remove = function () {
+        delete BaseObject.__attributes[this.name()];
+    }
+
+    this.on("beforeChange", function (e) {
+        switch (e.name) {
+            case "callback":
+                if (!isFunction(e.value))
+                    throw new Error("Attribute.callback: Value must be Function");
+                break;
+        }
+    })
+
+    this.on("apply", function (e) {
+        that.callback().call(e.target, e.value);
+    })
+
+    function init() {
+        this.applyOptions(arguments[0])
+    }
+    init.apply(this, arguments);
 }
 
 //Collection
@@ -279,14 +326,12 @@ function Element() {
         return instanceOf(this, s);
     }
 
-    this.query = function (s, t) {
-        var p = t || document;
-        return p.querySelector(s)
+    this.query = function (s) {
+        return query(s, this.node())
     }
 
-    this.queryAll = function (s, t) {
-        var p = t || document;
-        return p.querySelectorAll(s);
+    this.queryAll = function (s) {
+        return queryAll(s, this.node());
     }
 
     this.appendTo = function (node) {
