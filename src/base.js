@@ -307,7 +307,7 @@ function Element() {
         return this.node().textContent;
     }
 
-    this.text = function (s) {
+    this.html = function (s) {
         if (!isEmpty(s)) {
             if (!isString(s)) {
                 throw new TypeError("Value must be String");
