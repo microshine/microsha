@@ -54,6 +54,14 @@ function instanceOf(el, s) {
     return false
 }
 
+function hasProperty(obj, n) {
+    if (!isObject(obj))
+        throw new TypeError("Parameter 1 must be Object");
+    if (!isString(obj))
+        throw new TypeError("Parameter 2 must be String");
+    return (n in obj);
+}
+
 function query(s, t) {
     var p = t || document;
     return p.querySelector(s)
@@ -283,6 +291,30 @@ function Element() {
             this.node().setAttribute(n, val);
             return val;
         }
+    }
+
+    this.hasProperty = function (n) {
+        return hasProperty(this, n);
+    }
+
+    this.text = function (s) {
+        if (!isEmpty(s)) {
+            if (!isString(s)) {
+                throw new TypeError("Value must be String");
+                this.node().textContent = s;
+            }
+        }
+        return this.node().textContent;
+    }
+
+    this.text = function (s) {
+        if (!isEmpty(s)) {
+            if (!isString(s)) {
+                throw new TypeError("Value must be String");
+                this.node().innerHTML = s;
+            }
+        }
+        return this.node().innerHTML;
     }
 
     this.show = function () {
