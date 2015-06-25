@@ -377,13 +377,13 @@ function Element() {
         return queryAll(s, this.node());
     }
 
-    this.appendTo = function (node) {
+    this.appendTo = function (node, t) {
         if (instanceOf(node, "Element"))
             node.node().appendChild(this.node());
         else {
             var _node = node;
             if (isString(node))
-                _node = query(node);
+                _node = query(node, t);
             _node.appendChild(this.node());
         }
     }
