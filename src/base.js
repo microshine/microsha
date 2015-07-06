@@ -161,7 +161,7 @@ function BaseObject() {
         var obj = {};
         for (var i in this) {
             var attrs = this[i].attributes;
-            if (attrs && attrs.isProperty && hasProperty(attrs,"json")) {
+            if (attrs && attrs.isProperty && hasProperty(attrs, "json")) {
                 var name = attrs.json.name || i;
                 var val = this[i]();
                 if (isObject(val))
@@ -180,9 +180,10 @@ function BaseObject() {
         if (!isFunction(cb))
             throw new TypeError("Parameter 2 must be Function");
         if (!(n in _events)) {
-            _events[n] = []
+            _events[n] = {}
         }
-        _events[n].push(cb);
+        var e_count = Object.keys(_events[n]).length;
+        _events[n][e_count] = cb;
     }
 
     this.trigger = function (n, args) {
@@ -192,8 +193,15 @@ function BaseObject() {
         }
     }
 
-    this.off = function (n) {
-        delete _events[n]
+    this.off = function (n, fn) {
+        var e = _events[n];
+        if (isFunction(fn)) {
+            for (var i in e)
+                if (e[i] = fn)
+                    e[i] = function () { };
+        }
+        else
+            delete _events[n]
         return true;
     }
 
@@ -221,7 +229,7 @@ BaseObject.defineAttribute = function (name, fn) {
         throw new TypeError("Parameter 1 msut be String");
     if (hasProperty(attrs, name))
         throw new Error("Attribute '" + name + "' already exists");
-    attrs[name] = new Attribute({name: name, callback: fn});
+    attrs[name] = new Attribute({ name: name, callback: fn });
 }
 
 function Attribute() {
@@ -257,7 +265,7 @@ function Attribute() {
 //Collection
 function Collection() {
     extend(this, BaseObject);
-    
+
     var _items = {};
     this.items = function (index) {
         return _items[index];
