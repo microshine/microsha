@@ -77,6 +77,8 @@ function extend(a, b) {
 }
 
 function instanceOf(el, s) {
+    if (isEmpty(el))
+        return false;
     if (el.__type) {
         if (el.__type == s)
             return true;
@@ -118,7 +120,7 @@ function BaseObject() {
     this.defineProperty = function (n, value, readOnly, options) {
         _data[n] = value;
         this[n] = function (v) {
-            if (!isEmpty(v) && !readOnly) {
+            if (!isUndefined(v) && !readOnly) {
                 var e = {
                     name: n,
                     value: v,
@@ -282,15 +284,20 @@ function Collection() {
     function refreshIndexes(val) {
         var j = 0;
         for (var i in val) {
-            val[j++] = val[i];
-            if (i != j)
+            if (i != j) {
+                var v = val[i]
                 delete val[i];
+                val[j++] = v;
+            }
+            else {
+                j++;
+            }
         }
     }
 
     this.removeAt = function (index) {
         var e = {
-            value: item,
+            value: _items[index],
             cancel: false
         }
         this.trigger("beforeRemove", [e])
@@ -300,6 +307,13 @@ function Collection() {
             this.trigger("remove", [e])
         }
     }
+
+    this.remove = function (obj) {
+        var i = this.indexOf(obj);
+        if (i >= 0)
+            this.removeAt(i);
+    }
+
     function compareBase(el, val) {
         if (el.__type) {
             if (el.__type == val.__type)
@@ -414,8 +428,6 @@ function Element() {
 
     this.text = function (s) {
         if (!isEmpty(s)) {
-            if (!isString(s))
-                throw new TypeError("Value must be String");
             this.node().textContent = s;
         }
         return this.node().textContent;
