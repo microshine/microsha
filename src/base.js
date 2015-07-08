@@ -197,7 +197,7 @@ function BaseObject() {
         var e = _events[n];
         if (isFunction(fn)) {
             for (var i in e)
-                if (e[i] = fn)
+                if (e[i] == fn)
                     e[i] = function () { };
         }
         else
