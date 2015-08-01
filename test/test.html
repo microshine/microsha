@@ -1,0 +1,29 @@
+﻿<html>
+<head>
+    <title>Test</title>
+    <script src="../src/base.js"></script>
+</head>
+<body>
+    <script>
+        var col = new Collection();
+        var e1 = new Element();
+        e1.name = "e1";
+        var e2 = new Element();
+        e2.name = "e2";
+        var e3 = new Element();
+        e3.name = "e3";
+        var e4 = new Element();
+        e4.name = "e4";
+        col.add(e1);
+        col.add(e2);
+        col.add(e3);
+        col.add(e4);
+
+        col.remove(e4);
+
+        for (var i = 0; i < col.length() ; i++) {
+            console.log(col.items(i).name);
+        }
+    </script>
+</body>
+</html>

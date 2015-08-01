@@ -321,6 +321,16 @@ function Collection() {
         if (i >= 0)
             this.removeAt(i);
     }
+    
+    this.clear = function(){
+        var ri = [];
+        for (var i in _items){
+            ri.push(_items[i]);
+        }
+        for (var i in ri){
+            this.remove(ri[i]);
+        }
+    }
 
     function compareBase(el, val) {
         if (el.__type) {
@@ -383,8 +393,15 @@ function Element() {
 
     this.create = function (s) {
         s = s || "div";
-        var html = "<" + s + "/>";
-        this.node(createNode(html));
+        s = document.createElement(s);
+        this.node(s);
+    }
+    
+    this.remove = function(){
+        var n = this.node();
+        if (n){
+            n.remove();
+        }
     }
 
     this.instanceOf = function (s) {
