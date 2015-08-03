@@ -409,11 +409,23 @@ function Element() {
     }
 
     this.query = function (s) {
-        return query(s, this.node())
+        var r = query(s, this.node())
+        if (r){
+            //wrap to Element
+            r = (new Element({node:r}))
+        }
+        return r 
     }
 
     this.queryAll = function (s) {
-        return queryAll(s, this.node());
+        var r = queryAll(s, this.node());
+        if (r){
+            for (var i in r){
+                //Wrap to Element each item
+                r[i]=r = (new Element({node:r[i]}))
+            }
+        }
+        return r;        
     }
 
     this.appendTo = function (node, t) {
@@ -425,6 +437,17 @@ function Element() {
                 _node = query(node, t);
             _node.appendChild(this.node());
         }
+    }
+    
+    this.children = function(){
+        var n = this.node();
+        var r = [];
+        if(n && n.hasChildNodes()){
+            for (var i=0; i<n.chidNodes.length; i++){
+                r.push(new Element({node: n.childNode[i]}));
+            }
+        }
+        return r;
     }
 
     this.addClass = function (s) {
@@ -528,6 +551,8 @@ function Element() {
     }
 
     function init() {
+        this.create();
+        this.applyOptions(arguments[0]);
     }
 
     init.apply(this, arguments);
