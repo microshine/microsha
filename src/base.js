@@ -1,4 +1,4 @@
-﻿function isString(v) {
+function isString(v) {
     return typeof v == "string"
 }
 
@@ -129,7 +129,7 @@ function BaseObject() {
                 that.trigger("beforeChange", [e]);
                 if (!e.cancel) {
                     _data[n] = e.value;
-                    that.trigger("change", [{ name: n, value: e.value }]);
+                    that.trigger("change", [{name: n, value: e.value}]);
                 }
             }
             return _data[n]
@@ -141,7 +141,7 @@ function BaseObject() {
         for (var i in options) {
             var attr = BaseObject.__attributes[i];
             if (attr)
-                attr.trigger("apply", [{ target: this, value: options }]);
+                attr.trigger("apply", [{target: this, value: options}]);
         }
     }
 
@@ -187,9 +187,14 @@ function BaseObject() {
     }
 
     this.trigger = function (n, args) {
+        if (isUndefined(args.length))
+            args = [args];
         if (n in _events) {
-            for (var i in _events[n])
+            for (var i in _events[n]) {
+                if (args[0].stopEvent)
+                    break;
                 _events[n][i].apply(this, args);
+            }
         }
     }
 
@@ -198,7 +203,8 @@ function BaseObject() {
         if (isFunction(fn)) {
             for (var i in e)
                 if (e[i] == fn)
-                    e[i] = function () { };
+                    e[i] = function () {
+                    };
         }
         else
             delete _events[n]
@@ -229,7 +235,7 @@ BaseObject.defineAttribute = function (name, fn) {
         throw new TypeError("Parameter 1 msut be String");
     if (hasProperty(attrs, name))
         throw new Error("Attribute '" + name + "' already exists");
-    attrs[name] = new Attribute({ name: name, callback: fn });
+    attrs[name] = new Attribute({name: name, callback: fn});
 }
 
 function Attribute() {
@@ -271,6 +277,10 @@ function Collection() {
         return _items[index];
     }
 
+    this.list = function () {
+        return _items;
+    }
+
     this.length = function () {
         var res = Object.keys(_items).length;
         return res;
@@ -285,7 +295,7 @@ function Collection() {
         if (!e.cancel) {
             var len = this.length();
             _items[len] = e.value;
-            this.trigger("add", [{ value: e.value, index: this.length() }])
+            this.trigger("add", [{value: e.value, index: this.length()}])
         }
     }
 
@@ -321,13 +331,13 @@ function Collection() {
         if (i >= 0)
             this.removeAt(i);
     }
-    
-    this.clear = function(){
+
+    this.clear = function () {
         var ri = [];
-        for (var i in _items){
+        for (var i in _items) {
             ri.push(_items[i]);
         }
-        for (var i in ri){
+        for (var i in ri) {
             this.remove(ri[i]);
         }
     }
@@ -375,9 +385,11 @@ function Element() {
         }
     })
 
-    this.on("change", function (e) {
+    this.on("beforeChange", function (e) {
         switch (e.name) {
             case "node":
+                if (instanceOf(e.value, "Element"))
+                    e.value = e.value.node();
                 e.value.addEventListener("click", function () {
                     that.trigger("click", arguments);
                 })
@@ -396,11 +408,11 @@ function Element() {
         s = document.createElement(s);
         this.node(s);
     }
-    
-    this.remove = function(){
+
+    this.remove = function () {
         var n = this.node();
-        if (n){
-            n.remove();
+        if (n) {
+            n && n.parentNode && n.parentNode.removeChild(n);
         }
     }
 
@@ -410,22 +422,22 @@ function Element() {
 
     this.query = function (s) {
         var r = query(s, this.node())
-        if (r){
+        if (r) {
             //wrap to Element
-            r = (new Element({node:r}))
+            r = (new Element({node: r}))
         }
-        return r 
+        return r
     }
 
     this.queryAll = function (s) {
         var r = queryAll(s, this.node());
-        if (r){
-            for (var i in r){
+        if (r) {
+            for (var i in r) {
                 //Wrap to Element each item
-                r[i]=r = (new Element({node:r[i]}))
+                r[i] = r = (new Element({node: r[i]}))
             }
         }
-        return r;        
+        return r;
     }
 
     this.appendTo = function (node, t) {
@@ -438,12 +450,12 @@ function Element() {
             _node.appendChild(this.node());
         }
     }
-    
-    this.children = function(){
+
+    this.children = function () {
         var n = this.node();
         var r = [];
-        if(n && n.hasChildNodes()){
-            for (var i=0; i<n.chidNodes.length; i++){
+        if (n && n.hasChildNodes()) {
+            for (var i = 0; i < n.chidNodes.length; i++) {
                 r.push(new Element({node: n.childNode[i]}));
             }
         }
@@ -518,11 +530,11 @@ function Element() {
     }
 
     this.size = function (h, w) {
-        if (arguments.length = 2) {
+        if (arguments.length == 2) {
             this.width(w);
             this.height(h);
         }
-        return { height: this.height(), width: this.width() }
+        return {height: this.height(), width: this.width()}
     }
 
     this.x = this.left = function (n) {
@@ -547,7 +559,7 @@ function Element() {
             this.node().style.top = o.y || o.top;
             this.trigger("move");
         }
-        return { x: this.x(), y: this.y() }
+        return {x: this.x(), y: this.y()}
     }
 
     function init() {
